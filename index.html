@@ -17,7 +17,6 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;}
 .wrap{max-width:none;margin:0 auto;padding:16px 24px}
-@media (min-width:900px){textarea{min-height:60vh}}
 h1{font-size:20px;margin:4px 0 2px}
 .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
 .grid{display:grid;gap:14px}
@@ -78,6 +77,7 @@ details.card[open] summary::before{content:"▾ "}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
   padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:9}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (min-width:900px){textarea{min-height:60vh}}
 </style>
 <script>window.onerror=function(m){var d=document.createElement('p');d.style.cssText='margin:12px;padding:10px;border:1px solid #dc2626;color:#dc2626;border-radius:8px';d.textContent='스크립트 오류: '+m+' - 다른 브라우저로 열어보세요.';(document.body||document.documentElement).insertBefore(d,(document.body||document.documentElement).firstChild);};</script>
 </head>
