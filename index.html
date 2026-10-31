@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>마크다운 정리기</title>
+<style>
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--text:#1d2129;--muted:#6b7280;--line:#e2e5ea;
+  --accent:#5865f2;--accent-weak:#eef0ff;--ok:#15803d;--ok-weak:#e8f6ec;--warn:#dc2626;--field:#fafbfc;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#14161b;--card:#1d2027;--text:#e6e8ec;--muted:#9aa1ad;--line:#2f333c;
+    --accent:#7c86f6;--accent-weak:#262a46;--ok:#4ade80;--ok-weak:#1b2e22;--warn:#f87171;--field:#181a20;}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 2px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.grid{display:grid;gap:14px}
+@media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+textarea{width:100%;min-height:260px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px;
+  background:var(--field);color:var(--text);font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,"D2Coding",monospace;}
+textarea:focus,input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--text);
+  border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.small{padding:4px 9px;font-size:13px}
+button.done{background:var(--ok-weak);border-color:var(--ok);color:var(--ok)}
+input[type=text],input[type=number],select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;
+  padding:6px 8px;background:var(--field);color:var(--text)}
+input[type=number]{width:90px}
+.counts{font-size:13px;color:var(--muted);margin-top:8px}
+.counts b{color:var(--text);font-weight:600}
+.diff{display:flex;gap:10px;flex-wrap:wrap;background:var(--accent-weak);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.diff b{font-weight:700}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.tabs button{border:0;border-radius:0;padding:6px 14px}
+.tabs button.on{background:var(--accent);color:#fff}
+.hide{display:none!important}
+.chunks{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.chunk{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.chunk.copied{opacity:.6}
+.chunk-head{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--field);border-bottom:1px solid var(--line);font-size:13px}
+.chunk-head .n{font-weight:700}
+.chunk-head .c{color:var(--muted)}
+.chunk-head .c.over{color:var(--warn);font-weight:700}
+.chunk pre{margin:0;padding:10px;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;
+  font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.note{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+details.card summary{cursor:pointer;font-weight:600;list-style:none}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::before{content:"▸ ";color:var(--muted)}
+details.card[open] summary::before{content:"▾ "}
+.rules{display:grid;gap:6px;margin-top:10px}
+@media (min-width:640px){.rules{grid-template-columns:1fr 1fr}}
+.rules label{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:6px 8px;border-radius:8px;border:1px solid var(--line)}
+.rules label input{margin-top:4px}
+.sect{margin-top:16px}
+.sect h3{font-size:14px;margin:0 0 8px}
+.crule{display:grid;grid-template-columns:auto 1fr 1fr auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.crule input[type=text]{width:100%;min-width:0}
+.crule input.bad{border-color:var(--warn);outline-color:var(--warn)}
+.crule .re{font-size:12.5px;white-space:nowrap;display:flex;gap:3px;align-items:center}
+@media (max-width:560px){
+  .crule{grid-template-columns:auto 1fr auto;}
+  .crule .rep{grid-column:2/3}
+  .crule .re{grid-column:2/3}
+}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
+  padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script>window.onerror=function(m){var d=document.createElement('p');d.style.cssText='margin:12px;padding:10px;border:1px solid #dc2626;color:#dc2626;border-radius:8px';d.textContent='스크립트 오류: '+m+' - 다른 브라우저로 열어보세요.';(document.body||document.documentElement).insertBefore(d,(document.body||document.documentElement).firstChild);};</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>마크다운 정리기</h1>
+  <p class="sub">마크다운 기호를 걷어내고, 표는 읽기 쉬운 글로 바꿔요. 디코 모드에서는 글자 수 제한에 맞춰 나눠서 복사할 수 있어요.</p>
+
+  <div class="diff" id="diff">원본 <b id="dIn">0</b>자 → 변환 후 <b id="dOut">0</b>자 <span id="dDelta"></span></div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>원본
+        <span class="spacer"></span>
+        <button class="small" id="btnPaste">붙여넣기</button>
+        <button class="small" id="btnSample">예시</button>
+        <button class="small" id="btnClear">지우기</button>
+      </h2>
+      <textarea id="input" placeholder="여기에 마크다운 텍스트를 붙여넣으세요"></textarea>
+      <div class="counts" id="inCounts"></div>
+    </section>
+
+    <section class="card">
+      <h2>
+        <span class="tabs">
+          <button id="tabBasic" class="on">기본</button>
+          <button id="tabDiscord">디코</button>
+        </span>
+        <span class="spacer"></span>
+        <button class="primary" id="btnCopyAll">전체 복사</button>
+      </h2>
+
+      <div id="basicView">
+        <textarea id="output" readonly placeholder="변환 결과가 여기에 표시돼요"></textarea>
+        <div class="counts" id="outCounts"></div>
+      </div>
+
+      <div id="discordView" class="hide">
+        <div class="row">
+          <label>청크당 최대 <input type="number" id="limit" min="50" max="100000" step="1"> 자</label>
+          <button class="small" data-limit="2000">2000 (일반)</button>
+          <button class="small" data-limit="4000">4000 (Nitro)</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label><input type="checkbox" id="numbering"> 청크 끝에 (1/3) 번호 붙이기</label>
+          <span class="spacer"></span>
+          <button class="small" id="btnResetCopied">복사 표시 초기화</button>
+        </div>
+        <p class="note">디스코드는 메시지당 일반 2000자, Nitro 4000자 제한이며 띄어쓰기와 줄바꿈도 1자로 셉니다. 문단 → 줄 → 띄어쓰기 순으로 자연스러운 위치에서 나누고, 이모지는 안전하게 2자로 계산해요.</p>
+        <div class="counts" id="chunkSummary"></div>
+        <div class="chunks" id="chunks"></div>
+      </div>
+    </section>
+  </div>
+
+  <details class="card sect" id="settings">
+    <summary>변환 규칙 설정</summary>
+
+    <div class="sect">
+      <h3>기본 규칙</h3>
+      <div class="rules" id="builtinRules"></div>
+    </div>
+
+    <div class="sect">
+      <h3>제목 변환 방식</h3>
+      <div class="row">
+        <select id="headingStyle">
+          <option value="symbol">기호형 (# 【 제목 】 / ## ■ / ### ◆ / #### ▷)</option>
+          <option value="underline">밑줄형 (# ━━━ / ## ─── / ### ◆ / #### ▷)</option>
+          <option value="plain">기호 없이 글자만</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>표 변환 방식</h3>
+      <div class="row">
+        <select id="tableStyle">
+          <option value="card">카드형 (행마다 ▸ 제목 + · 항목: 값)</option>
+          <option value="inline">한 줄형 (- 첫칸 (항목: 값, 항목: 값))</option>
+          <option value="slash">구분자형 (값 / 값 / 값)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>커스텀 규칙</h3>
+      <p class="note" style="margin:0 0 8px">찾을 내용 → 바꿀 내용. 바꿀 칸에 \n은 줄바꿈, \t는 탭. 정규식을 켜면 $1 같은 그룹 참조도 돼요. 설정은 이 브라우저에 자동 저장돼요.</p>
+      <div id="customRules"></div>
+      <div class="row" style="margin-top:6px">
+        <button class="small" id="btnAddRule">+ 규칙 추가</button>
+        <span class="spacer"></span>
+        <label style="font-size:13px">적용 시점
+          <select id="customOrder">
+            <option value="after">기본 규칙 다음</option>
+            <option value="before">기본 규칙 전</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </details>
+</div>
+<div class="toast" id="toast"></div>
+<noscript><p style="text-align:center;color:#dc2626">이 미리보기는 스크립트를 실행하지 않아요. 파일을 브라우저(크롬, 사파리 등)로 직접 열어주세요.</p></noscript>
+
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem('mdclean:'+k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('mdclean:'+k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------- 표 변환 ---------- */
+function isSep(l){ return /^[\s|:\-]+$/.test(l) && l.includes('-') && l.includes('|'); }
+function splitRow(l){
+  let s = l.trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|') && !s.endsWith('\\|')) s = s.slice(0,-1);
+  const cells = []; let cur = '';
+  for (let i=0;i<s.length;i++){
+    const c = s[i];
+    if (c === '\\' && s[i+1] === '|'){ cur += '|'; i++; continue; }
+    if (c === '|'){ cells.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  cells.push(cur);
+  return cells.map(c => c.replace(/<br\s*\/?>/gi,' ').replace(/ {2,}/g,' ').trim());
+}
+function renderTable(head, rows){
+  const style = state.tableStyle;
+  const cols = Math.max(head.length, ...rows.map(r => r.length));
+  const h = Array.from({length:cols}, (_,i) => head[i] || ('열' + (i+1)));
+  const pad = r => Array.from({length:cols}, (_,i) => r[i] || '');
+  rows = rows.map(pad);
+  // 첫 칸이 빈 행은 바로 위 행의 이어지는 항목으로 묶음
+  const groups = [];
+  rows.forEach(r => {
+    if (!r[0] && groups.length && cols > 1) groups[groups.length-1].rows.push(r);
+    else groups.push({title: r[0], rows: [r]});
+  });
+  const grouped = groups.some(g => g.rows.length > 1);
+  const pairs = r => { const p = []; for (let k=1;k<cols;k++) if (r[k]) p.push([h[k], r[k]]); return p; };
+
+  if (style === 'slash'){
+    const lines = ['[' + h.join(' / ') + ']'];
+    groups.forEach(g => g.rows.forEach((r, ri) =>
+      lines.push(r.map((c, k) => (k === 0 && ri > 0) ? '〃' : (c || '-')).join(' / '))));
+    return lines.join('\n');
+  }
+  if (style === 'inline'){
+    return groups.map(g => g.rows.map((r, ri) => {
+      const p = pairs(r).map(x => x[0] + ': ' + x[1]).join(', ');
+      return ri === 0 ? '- ' + (g.title || '-') + (p ? ' (' + p + ')' : '') : '  └ ' + p;
+    }).join('\n')).join('\n');
+  }
+  // card
+  if (cols === 1) return rows.map(r => '- ' + r[0]).join('\n');
+  return groups.map(g => {
+    const out = ['▸ ' + (g.title || '-')];
+    if (!grouped) pairs(g.rows[0]).forEach(([k, v]) => out.push('  · ' + k + ': ' + v));
+    else g.rows.forEach(r => pairs(r).forEach(([k, v], j) => out.push((j === 0 ? '  - ' : '    ') + k + ': ' + v)));
+    return out.join('\n');
+  }).join('\n\n');
+}
+function convertTables(t){
+  const lines = t.split('\n'), out = [];
+  for (let i=0;i<lines.length;i++){
+    const l = lines[i];
+    if (l.includes('|') && i+1 < lines.length && isSep(lines[i+1]) && !isSep(l)){
+      const head = splitRow(l), rows = [];
+      let j = i+2;
+      while (j < lines.length && lines[j].includes('|') && lines[j].trim() !== '' && !isSep(lines[j])){
+        rows.push(splitRow(lines[j])); j++;
+      }
+      if (out.length && out[out.length-1].trim() !== '') out.push('');
+      out.push(renderTable(head, rows));
+      if (j < lines.length && lines[j].trim() !== '') out.push('');
+      i = j-1; continue;
+    }
+    out.push(l);
+  }
+  return out.join('\n');
+}
+
+/* ---------- LaTeX → 일반 문자 ---------- */
+const mkMap = (a,b) => { const m={}, A=[...a], B=[...b]; A.forEach((c,i)=>m[c]=B[i]); return m; };
+const SUP = mkMap('0123456789+-−=()niabcdefghjklmoprstuvwxyzABDEGHIJKLMNOPRTUVWαβγδθφχ',
+                  '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁻⁼⁽⁾ⁿⁱᵃᵇᶜᵈᵉᶠᵍʰʲᵏˡᵐᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁⱽᵂᵅᵝᵞᵟᶿᵠᵡ');
+const SUB = mkMap('0123456789+-−=()aehijklmnoprstuvxβγρφχ',
+                  '₀₁₂₃₄₅₆₇₈₉₊₋₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ');
+const TEX_SYM = {alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',varepsilon:'ε',zeta:'ζ',eta:'η',theta:'θ',vartheta:'ϑ',
+  iota:'ι',kappa:'κ',lambda:'λ',mu:'μ',nu:'ν',xi:'ξ',omicron:'ο',pi:'π',varpi:'ϖ',rho:'ρ',varrho:'ϱ',sigma:'σ',varsigma:'ς',
+  tau:'τ',upsilon:'υ',phi:'φ',varphi:'φ',chi:'χ',psi:'ψ',omega:'ω',Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Xi:'Ξ',Pi:'Π',
+  Sigma:'Σ',Upsilon:'Υ',Phi:'Φ',Psi:'Ψ',Omega:'Ω',
+  infty:'∞',partial:'∂',nabla:'∇',sum:'∑',prod:'∏',coprod:'∐',int:'∫',iint:'∬',iiint:'∭',oint:'∮',
+  emptyset:'∅',varnothing:'∅',forall:'∀',exists:'∃',nexists:'∄',neg:'¬',lnot:'¬',
+  cdots:'⋯',ldots:'…',dots:'…',dotsc:'…',dotsb:'⋯',vdots:'⋮',ddots:'⋱',
+  angle:'∠',triangle:'△',square:'□',degree:'°',prime:'′',hbar:'ℏ',ell:'ℓ',Re:'ℜ',Im:'ℑ',aleph:'ℵ',
+  therefore:'∴',because:'∵',star:'⋆',ast:'∗',bullet:'•',circ:'∘',
+  langle:'⟨',rangle:'⟩',lfloor:'⌊',rfloor:'⌋',lceil:'⌈',rceil:'⌉',vert:'|',Vert:'‖',lvert:'|',rvert:'|',lVert:'‖',rVert:'‖',
+  uparrow:'↑',downarrow:'↓',checkmark:'✓',dagger:'†',lbrace:'{',rbrace:'}',backslash:'\\',colon:':'};
+const TEX_BIN = {times:'×',cdot:'·',div:'÷',pm:'±',mp:'∓',leq:'≤',le:'≤',geq:'≥',ge:'≥',leqslant:'≤',geqslant:'≥',
+  neq:'≠',ne:'≠',approx:'≈',equiv:'≡',sim:'∼',simeq:'≃',cong:'≅',propto:'∝',ll:'≪',gg:'≫',
+  to:'→',rightarrow:'→',leftarrow:'←',gets:'←',Rightarrow:'⇒',Leftarrow:'⇐',Leftrightarrow:'⇔',leftrightarrow:'↔',
+  longrightarrow:'⟶',Longrightarrow:'⟹',longleftrightarrow:'⟷',Longleftrightarrow:'⟺',mapsto:'↦',implies:'⇒',impliedby:'⇐',iff:'⇔',
+  in:'∈',notin:'∉',ni:'∋',subset:'⊂',subseteq:'⊆',supset:'⊃',supseteq:'⊇',subsetneq:'⊊',cup:'∪',cap:'∩',setminus:'∖',
+  land:'∧',lor:'∨',wedge:'∧',vee:'∨',oplus:'⊕',otimes:'⊗',odot:'⊙',perp:'⊥',parallel:'∥',mid:'|'};
+const TEX_FN = new Set('sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh coth log ln lg exp lim liminf limsup max min sup inf det arg deg gcd lcm dim ker hom Pr'.split(' '));
+const TEX_BB = {R:'ℝ',N:'ℕ',Z:'ℤ',Q:'ℚ',C:'ℂ',P:'ℙ',H:'ℍ'};
+const TEX_ENV_OPEN = {pmatrix:'(',bmatrix:'[',Bmatrix:'{',vmatrix:'|',Vmatrix:'‖'};
+const TEX_ENV_CLOSE = {pmatrix:')',bmatrix:']',Bmatrix:'}',vmatrix:'|',Vmatrix:'‖'};
+const simpleTerm = a => !/[\s+\-−*∗/=<>±∓×÷·,]/.test(a.trim());
+
+function script(a, map, mark){
+  const t = a.replace(/\s+/g,'');
+  if (!t) return '';
+  if (map === SUP && t === '∘') return '°';
+  const cs = [...t];
+  if (cs.every(c => map[c] || c === '′')) return cs.map(c => map[c] || c).join('');
+  return cs.length === 1 ? mark + t : mark + '(' + a.trim() + ')';
+}
+
+function texConv(s){
+  let i = 0, out = '';
+  const skipSp = () => { while (s[i] === ' ' || s[i] === '\n' || s[i] === '\t') i++; };
+  function raw(){
+    skipSp();
+    if (i >= s.length) return '';
+    if (s[i] === '{'){
+      let d = 1, j = i + 1;
+      while (j < s.length && d){ if (s[j] === '\\'){ j += 2; continue; } if (s[j] === '{') d++; else if (s[j] === '}') d--; j++; }
+      const r = s.slice(i + 1, d ? j : j - 1); i = j; return r;
+    }
+    if (s[i] === '\\'){ const m = /^\\([a-zA-Z]+|[\s\S])/.exec(s.slice(i)); if (m){ i += m[0].length; return m[0]; } i++; return ''; }
+    const ch = String.fromCodePoint(s.codePointAt(i)); i += ch.length; return ch;
+  }
+  const arg = () => texConv(raw());
+  function opt(){ skipSp(); if (s[i] === '['){ const j = s.indexOf(']', i); if (j > 0){ const r = s.slice(i + 1, j); i = j + 1; return texConv(r); } } return null; }
+  const wrap = a => simpleTerm(a) ? a.trim() : '(' + a.trim() + ')';
+  const accent = (a, mark, lastOnly) => { const cs = [...a]; if (lastOnly && cs.length > 1) return a + mark; return cs.map(c => c.trim() ? c + mark : c).join(''); };
+  function cmd(name){
+    if (/^(sum|prod|coprod|int|iint|iiint|oint)$/.test(name)) return ' ' + TEX_SYM[name];
+    if (TEX_SYM[name]) return TEX_SYM[name];
+    if (TEX_BIN[name]) return ' ' + TEX_BIN[name] + ' ';
+    if (TEX_FN.has(name)) return name + (/[A-Za-z0-9\\Ͱ-Ͽ]/.test(s[i] || '') ? ' ' : '');
+    switch (name){
+      case 'frac': case 'dfrac': case 'tfrac': case 'cfrac': { const a = arg(), b = arg(); return wrap(a) + '/' + wrap(b); }
+      case 'sqrt': { const n = opt(); const a = arg(); return (n ? script(n, SUP, '') : '') + '√' + wrap(a); }
+      case 'binom': case 'dbinom': case 'tbinom': { const a = arg(), b = arg(); return 'C(' + a.trim() + ', ' + b.trim() + ')'; }
+      case 'text': case 'textrm': case 'textnormal': case 'mbox': case 'hbox': case 'textbf': case 'textit': case 'textsf': case 'texttt': case 'emph':
+        return raw().replace(/\\([%$&#_{}])/g, '$1');
+      case 'mathrm': case 'mathbf': case 'mathit': case 'mathsf': case 'mathtt': case 'mathcal': case 'mathscr': case 'mathfrak':
+      case 'boldsymbol': case 'bm': case 'operatorname': case 'mathnormal':
+        return arg();
+      case 'mathbb': case 'Bbb': return [...raw()].map(c => TEX_BB[c] || c).join('');
+      case 'bar': return accent(arg(), '̄');
+      case 'overline': return accent(arg(), '̅');
+      case 'underline': return accent(arg(), '̲');
+      case 'hat': case 'widehat': return accent(arg(), '̂', true);
+      case 'tilde': case 'widetilde': return accent(arg(), '̃', true);
+      case 'vec': case 'overrightarrow': return accent(arg(), '⃗', true);
+      case 'dot': return accent(arg(), '̇', true);
+      case 'ddot': return accent(arg(), '̈', true);
+      case 'not': { const a = arg(); return a.trim() === '=' ? '≠' : a.trim() + '̸'; }
+      case 'left': case 'right': case 'middle': case 'big': case 'Big': case 'bigg': case 'Bigg':
+      case 'bigl': case 'bigr': case 'Bigl': case 'Bigr': case 'biggl': case 'biggr': case 'Biggl': case 'Biggr':
+        skipSp(); if (s[i] === '.') i++; return '';
+      case 'begin': { const env = raw().replace('*', ''); if (env === 'array') raw(); return TEX_ENV_OPEN[env] || ''; }
+      case 'end': { const env = raw().replace('*', ''); return TEX_ENV_CLOSE[env] || ''; }
+      case 'pmod': return ' (mod ' + arg().trim() + ')';
+      case 'bmod': case 'mod': return ' mod ';
+      case 'quad': case 'qquad': case ',': case ':': case ';': case ' ': case '>': return ' ';
+      case '!': return '';
+      case '\\': return '\n';
+      case '|': return '‖';
+      case '{': case '}': case '%': case '$': case '_': case '#': case '&': return name;
+      case 'label': case 'tag': raw(); return '';
+      case 'displaystyle': case 'textstyle': case 'scriptstyle': case 'limits': case 'nolimits': case 'nonumber': case 'notag': return '';
+      default: return name;
+    }
+  }
+  while (i < s.length){
+    const c = s[i];
+    if (c === '\\'){ const m = /^\\([a-zA-Z]+|[\s\S])/.exec(s.slice(i)); if (!m){ i++; continue; } i += m[0].length; out += cmd(m[1]); continue; }
+    if (c === '^' || c === '_'){ i++; out += script(arg(), c === '^' ? SUP : SUB, c); continue; }
+    if (c === '{'){ out += arg(); continue; }
+    if (c === '}'){ i++; continue; }
+    if (c === '&' || c === '~'){ i++; out += ' '; continue; }
+    if (c === '*'){ i++; out += '∗'; continue; }
+    if (c === "'"){ i++; out += '′'; continue; }
+    out += c; i++;
+  }
+  return out;
+}
+function texToText(src, display){
+  return texConv(src)
+    .split('\n').map(l => l.replace(/[ \t]{2,}/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')').trim())
+    .filter(l => l).join(display ? '\n' : '; ');
+}
+function convertMath(t){
+  const parts = t.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`)/);
+  for (let k = 0; k < parts.length; k += 2){
+    parts[k] = parts[k]
+      .replace(/\$\$([\s\S]+?)\$\$/g, (m, x) => texToText(x, true))
+      .replace(/\\\[([\s\S]+?)\\\]/g, (m, x) => texToText(x, true))
+      .replace(/\\begin\{(equation|align|gather|multline|eqnarray|displaymath)(\*?)\}([\s\S]*?)\\end\{\1\2\}/g, (m, a, b, x) => texToText(x, true))
+      .replace(/\\\(([\s\S]+?)\\\)/g, (m, x) => texToText(x, false))
+      .replace(/(^|[^\\$])\$(?=[^\s$])((?:\\\$|[^$\n])*?[^\s\\$])\$(?![\d$])/g, (m, pre, x) => pre + texToText(x, false));
+  }
+  return parts.join('');
+}
+
+/* ---------- HTML 태그 ---------- */
+function convertHtml(t){
+  return t
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr|blockquote|pre)>/gi, '\n')
+    .replace(/<li(\s[^>]*)?>/gi, '- ')
+    .replace(/<hr\s*\/?>/gi, '\n')
+    .replace(/<sup>([^<]*)<\/sup>/gi, (m, x) => script(x, SUP, '^'))
+    .replace(/<sub>([^<]*)<\/sub>/gi, (m, x) => script(x, SUB, '_'))
+    .replace(/<\/?(p|div|h[1-6]|b|strong|i|em|u|s|strike|del|ins|mark|span|font|small|big|code|kbd|abbr|center|a|ul|ol|table|thead|tbody|tr|td|th|details|summary|blockquote|pre|sup|sub)(\s[^>]*)?\/?>/gi, '')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'").replace(/&middot;/g, '·').replace(/&hellip;/g, '…').replace(/&amp;/g, '&');
+}
+
+/* ---------- 제목 변환 ---------- */
+function headingLines(lvl, txt){
+  txt = txt.replace(/[ \t]+#+[ \t]*$/, '').trim();
+  const st = state.headingStyle;
+  if (st === 'plain') return [txt];
+  if (st === 'underline' && lvl <= 2){
+    const n = Math.min(20, Math.max(4, [...txt].length));
+    return [txt, (lvl === 1 ? '━' : '─').repeat(n)];
+  }
+  if (lvl === 1 && st !== 'underline') return ['【 ' + txt + ' 】'];
+  if (lvl === 2) return ['■ ' + txt];
+  if (lvl === 3) return ['◆ ' + txt];
+  return ['▷ ' + txt];
+}
+function convertHeadings(t){
+  const lines = t.split('\n'), out = [];
+  const push = arr => { if (out.length && out[out.length - 1].trim() !== '') out.push(''); out.push(...arr); };
+  for (let i = 0; i < lines.length; i++){
+    const l = lines[i], next = lines[i + 1];
+    const m = /^[ \t]*(#{1,6})(?:[ \t]+(.*))?$/.exec(l) || /^[ \t]*(#{2,6})([^#\s].*)$/.exec(l);
+    if (m){ if ((m[2] || '').replace(/#+\s*$/, '').trim()) push(headingLines(m[1].length, m[2])); continue; }
+    if (next !== undefined && l.trim() && !l.includes('|') && !/^\s*([-*+]|\d+[.)])\s/.test(l)){
+      if (/^[ \t]{0,3}=+[ \t]*$/.test(next)){ push(headingLines(1, l)); i++; continue; }
+      if (/^[ \t]{0,3}-{2,}[ \t]*$/.test(next)){ push(headingLines(2, l)); i++; continue; }
+    }
+    out.push(l);
+  }
+  return out.join('\n');
+}
+
+/* ---------- 기본 규칙 (순서대로 적용) ---------- */
+const BUILTIN = [
+  {id:'math',   label:'LaTeX 수식 $…$ $$…$$ → 일반 문자 (x², √, α, ≤)', fn:convertMath},
+  {id:'fence',  label:'코드블록 ``` 줄 제거', fn:t=>t.replace(/^[ \t]*(```|~~~).*(\n|$)/gm,'')},
+  {id:'quote',  label:'인용 > 제거', fn:t=>t.replace(/^[ \t]*(>[ \t]?)+/gm,'')},
+  {id:'table',  label:'표 | | → 읽기 쉬운 글', fn:convertTables},
+  {id:'html',   label:'HTML 태그 <br> 등 제거, &amp; 같은 기호 정리', fn:convertHtml},
+  {id:'heading',label:'제목 #, ##, ### → 기호 제목', fn:convertHeadings},
+  {id:'hr',     label:'구분선 ---, *** 제거', fn:t=>t.replace(/^[ \t]*([-*_])([ \t]*\1){2,}[ \t]*$/gm,'')},
+  {id:'bold',   label:'굵게 **글**, __글__ 제거', fn:t=>t.replace(/\*\*([^\n]+?)\*\*/g,'$1').replace(/__([^\n]+?)__/g,'$1').replace(/\*\*/g,'')},
+  {id:'bullet', label:'글머리 * + → - (체크박스 ☐ ☑)', fn:t=>t
+      .replace(/^([ \t]*)[*+][ \t]+/gm,'$1- ')
+      .replace(/^([ \t]*)- \[ \][ \t]*/gm,'$1☐ ')
+      .replace(/^([ \t]*)- \[[xX]\][ \t]*/gm,'$1☑ ')},
+  {id:'italic', label:'기울임 *글*, _글_ 제거', fn:t=>t
+      .replace(/(^|[^*\\])\*(?=\S)([^*\n]*?\S)\*(?!\*)/gm,'$1$2')
+      .replace(/(^|[\s(])_(?=\S)([^_\n]*?\S)_(?=$|[\s).,!?:;])/gm,'$1$2')},
+  {id:'strike', label:'취소선 ~~글~~ 제거', fn:t=>t.replace(/~~([^\n]+?)~~/g,'$1')},
+  {id:'code',   label:'인라인 코드 `글` 제거', fn:t=>t.replace(/`([^`\n]+)`/g,'$1')},
+  {id:'link',   label:'링크 [글](주소) → 글 (주소)', fn:t=>t
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,(m,a,u)=>a||u)
+      .replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,(m,a,u)=>a.trim()===u?u:a+' ('+u+')')
+      .replace(/<(https?:\/\/[^>\s]+)>/g,'$1')},
+  {id:'star',   label:'남은 * 전부 제거', fn:t=>t.replace(/\\\*|\*/g, m => m.length === 2 ? m : '')},
+  {id:'emdash', label:'앰대시 — → -', fn:t=>t.replace(/[—―]/g,'-')},
+  {id:'endash', label:'엔대시 – → -', fn:t=>t.replace(/–/g,'-')},
+  {id:'escape', label:'이스케이프 \\* 같은 역슬래시 정리', fn:t=>t.replace(/\\([\\`*_{}\[\]()#+\-.!|>~$])/g,'$1')},
+  {id:'listgap',label:'목록(-, 1., ☐) 항목 사이에 빈 줄 넣기', fn:t=>{
+      const isItem = l => /^(- |\d+[.)] |[☐☑•] |[①-⑳])/.test(l);
+      const out = []; let inList = false;
+      t.split('\n').forEach(l => {
+        if (isItem(l)){ if (out.length && out[out.length-1].trim() !== '') out.push(''); inList = true; }
+        else if (l.trim() === '') inList = false;
+        else if (inList && !/^\s/.test(l)){ out.push(''); inList = false; }
+        out.push(l);
+      });
+      return out.join('\n');
+    }},
+  {id:'blank',  label:'줄 끝 공백 정리, 빈 줄 여러 개 → 하나', fn:t=>t.replace(/[ \t]+$/gm,'').replace(/\n{3,}/g,'\n\n').trim()},
+];
+
+/* ---------- 상태 ---------- */
+const defaultsOn = {}; BUILTIN.forEach(r => defaultsOn[r.id] = true);
+const state = {
+  on: Object.assign({}, defaultsOn, store.get('on', {})),
+  tableStyle: store.get('tableStyle', 'card'),
+  headingStyle: store.get('headingStyle', 'symbol'),
+  custom: store.get('custom', []),
+  customOrder: store.get('customOrder', 'after'),
+  limit: store.get('limit', 2000),
+  numbering: store.get('numbering', false),
+  mode: store.get('mode', 'basic'),
+};
+let copied = new Set();
+let lastChunkKey = '';
+let chunks = [];
+
+/* ---------- 커스텀 규칙 ---------- */
+const unesc = s => s.replace(/\\n/g,'\n').replace(/\\t/g,'\t');
+function applyCustom(t){
+  state.custom.forEach(r => {
+    if (!r.on || !r.find) return;
+    try{
+      if (r.regex) t = t.replace(new RegExp(r.find, 'gm'), unesc(r.rep || ''));
+      else t = t.split(unesc(r.find)).join(unesc(r.rep || ''));
+    }catch(e){}
+  });
+  return t;
+}
+function convert(t){
+  t = t.replace(/\r\n?/g,'\n').replace(/[\u00A0\u2007\u202F\u3000]/g,' ').replace(/[\u200B-\u200D\u2060\uFEFF]/g,'');
+  if (state.customOrder === 'before') t = applyCustom(t);
+  BUILTIN.forEach(r => { if (state.on[r.id]) t = r.fn(t); });
+  if (state.customOrder === 'after') t = applyCustom(t);
+  return t;
+}
+
+/* ---------- 청크 분할 ---------- */
+function splitOnce(rest, eff){
+  if (rest.length <= eff) return [rest, ''];
+  const win = rest.slice(0, eff + 1);
+  const min = Math.floor(eff * 0.3);
+  let cut = win.lastIndexOf('\n\n');
+  if (cut < min) cut = win.lastIndexOf('\n');
+  if (cut < min) cut = win.lastIndexOf(' ');
+  if (cut < min){
+    cut = eff;
+    const code = rest.charCodeAt(cut - 1);
+    if (code >= 0xD800 && code <= 0xDBFF) cut--; // 이모지 반쪽 방지
+  }
+  let head = rest.slice(0, cut).replace(/\s+$/,'');
+  let tail = rest.slice(cut).replace(/^\n+/,'').replace(/^ /,'');
+  if (!head){ head = rest.slice(0, eff); tail = rest.slice(eff); }
+  return [head, tail];
+}
+function makeChunks(text, limit, numbering){
+  if (!text) return [];
+  let reserve = 0, result = [];
+  for (let pass=0; pass<4; pass++){
+    const eff = Math.max(10, limit - reserve);
+    result = [];
+    let rest = text;
+    while (rest){ const [h, t] = splitOnce(rest, eff); result.push(h); rest = t; }
+    if (!numbering) break;
+    const need = ('\n(' + result.length + '/' + result.length + ')').length;
+    if (need === reserve) break;
+    reserve = need;
+  }
+  if (numbering && result.length > 1) result = result.map((c,i) => c + '\n(' + (i+1) + '/' + result.length + ')');
+  return result;
+}
+
+/* ---------- 화면 ---------- */
+const fmt = n => n.toLocaleString('ko-KR');
+const noSpace = s => s.replace(/\s/g,'').length;
+function countLine(s){ return '공백 포함 <b>' + fmt(s.length) + '</b>자 · 공백 제외 <b>' + fmt(noSpace(s)) + '</b>자 · ' + fmt(s ? s.split('\n').length : 0) + '줄'; }
+
+function render(){
+  const src = $('#input').value;
+  const out = convert(src);
+  $('#output').value = out;
+  $('#inCounts').innerHTML = countLine(src);
+  $('#outCounts').innerHTML = countLine(out);
+  $('#dIn').textContent = fmt(src.length);
+  $('#dOut').textContent = fmt(out.length);
+  const d = out.length - src.length;
+  $('#dDelta').textContent = src ? '(' + (d <= 0 ? '' : '+') + fmt(d) + '자, 공백 제외 ' + fmt(noSpace(src)) + ' → ' + fmt(noSpace(out)) + '자)' : '';
+  renderChunks(out);
+}
+
+function renderChunks(out){
+  const limit = Math.max(50, parseInt(state.limit, 10) || 2000);
+  chunks = makeChunks(out, limit, state.numbering);
+  const key = limit + '|' + state.numbering + '|' + out;
+  if (key !== lastChunkKey){ copied = new Set(); lastChunkKey = key; }
+  const box = $('#chunks');
+  box.innerHTML = '';
+  $('#chunkSummary').innerHTML = chunks.length
+    ? '<b>' + chunks.length + '</b>개로 나눠졌어요 (청크당 최대 ' + fmt(limit) + '자)'
+    : '';
+  chunks.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'chunk' + (copied.has(i) ? ' copied' : '');
+    const head = document.createElement('div'); head.className = 'chunk-head';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = (i+1) + ' / ' + chunks.length;
+    const cnt = document.createElement('span'); cnt.className = 'c' + (c.length > limit ? ' over' : '');
+    cnt.textContent = fmt(c.length) + ' / ' + fmt(limit) + '자';
+    const sp = document.createElement('span'); sp.className = 'spacer';
+    const btn = document.createElement('button'); btn.className = 'small' + (copied.has(i) ? ' done' : '');
+    btn.textContent = copied.has(i) ? '복사됨 ✓' : '복사';
+    btn.onclick = async () => {
+      if (await copyText(c)){
+        copied.add(i); el.classList.add('copied'); btn.classList.add('done'); btn.textContent = '복사됨 ✓';
+        toast((i+1) + '번 청크 복사됨');
+      } else toast('복사 실패 - 직접 선택해서 복사해 주세요');
+    };
+    head.append(n, cnt, sp, btn);
+    const pre = document.createElement('pre'); pre.textContent = c;
+    el.append(head, pre);
+    box.appendChild(el);
+  });
+}
+
+function setMode(m){
+  state.mode = m; store.set('mode', m);
+  $('#tabBasic').classList.toggle('on', m === 'basic');
+  $('#tabDiscord').classList.toggle('on', m === 'discord');
+  $('#basicView').classList.toggle('hide', m !== 'basic');
+  $('#discordView').classList.toggle('hide', m !== 'discord');
+  $('#btnCopyAll').classList.toggle('hide', m !== 'basic');
+}
+
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try{ ok = document.execCommand('copy'); }catch(_){}
+    ta.remove(); return ok;
+  }
+}
+let toastTimer;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+/* ---------- 설정 UI ---------- */
+function buildBuiltin(){
+  const box = $('#builtinRules'); box.innerHTML = '';
+  BUILTIN.forEach(r => {
+    const lab = document.createElement('label');
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!state.on[r.id];
+    cb.onchange = () => { state.on[r.id] = cb.checked; store.set('on', state.on); render(); };
+    const sp = document.createElement('span'); sp.textContent = r.label;
+    lab.append(cb, sp); box.appendChild(lab);
+  });
+}
+function saveCustom(){ store.set('custom', state.custom); render(); }
+function buildCustom(){
+  const box = $('#customRules'); box.innerHTML = '';
+  if (!state.custom.length){
+    const p = document.createElement('p'); p.className = 'note'; p.style.margin = '0 0 6px';
+    p.textContent = '아직 커스텀 규칙이 없어요.'; box.appendChild(p);
+  }
+  state.custom.forEach((r, i) => {
+    const row = document.createElement('div'); row.className = 'crule';
+    const on = document.createElement('input'); on.type = 'checkbox'; on.checked = r.on !== false; on.title = '사용';
+    const f = document.createElement('input'); f.type = 'text'; f.placeholder = '찾을 내용'; f.value = r.find || '';
+    const rp = document.createElement('input'); rp.type = 'text'; rp.placeholder = '바꿀 내용 (비우면 삭제)'; rp.value = r.rep || ''; rp.className = 'rep';
+    const reLab = document.createElement('label'); reLab.className = 're';
+    const re = document.createElement('input'); re.type = 'checkbox'; re.checked = !!r.regex;
+    reLab.append(re, document.createTextNode('정규식'));
+    const del = document.createElement('button'); del.className = 'small'; del.textContent = '삭제';
+    const validate = () => {
+      let bad = false;
+      if (r.regex && r.find){ try{ new RegExp(r.find, 'gm'); }catch(e){ bad = true; } }
+      f.classList.toggle('bad', bad); f.title = bad ? '정규식 오류' : '';
+    };
+    on.onchange = () => { r.on = on.checked; saveCustom(); };
+    f.oninput = () => { r.find = f.value; validate(); saveCustom(); };
+    rp.oninput = () => { r.rep = rp.value; saveCustom(); };
+    re.onchange = () => { r.regex = re.checked; validate(); saveCustom(); };
+    del.onclick = () => { state.custom.splice(i, 1); buildCustom(); saveCustom(); };
+    validate();
+    row.append(on, f, rp, reLab, del); box.appendChild(row);
+  });
+}
+
+/* ---------- 예시 ---------- */
+const SAMPLE = `# 주간 회의 요약
+
+이번 주는 **출시 준비**가 핵심이었습니다 — 일정은 *대체로* 순조로워요.
+
+## 진행 상황
+* 디자인 시안 **확정**
+* QA 1차 완료 – 버그 12건
++ 배포 스크립트 \`deploy.sh\` 정리
+- [x] 서버 증설
+- [ ] 문서 업데이트
+
+| 담당자 | 작업 | 상태 |
+|---|---|:---:|
+| 민지 | 결제 모듈 | **완료** |
+| 준호 | 알림 개선 | 진행 중 |
+| 서연 | 온보딩 화면 | 대기 |
+
+---
+
+> 참고: 자세한 내용은 [회의록](https://example.com/notes)을 확인하세요.
+
+### 이번 주 계산
+성장률은 $r = \\frac{x_{t} - x_{t-1}}{x_{t-1}}$ 로 구했고, 오차는 $\\pm 0.5\\%$ 이내입니다. 가격은 $5에서 $10 사이예요.
+
+$$
+\\sigma = \\sqrt{\\frac{1}{n}\\sum_{i=1}^{n} (x_i - \\mu)^2}
+$$
+
+#### 메모
+$x^2 + y^2 \\leq r^2$ 이면 원 안, $\\theta \\in [0, 2\\pi)$
+
+***다음 회의***는 금요일입니다.`;
+
+/* ---------- 이벤트 ---------- */
+let deb;
+$('#input').addEventListener('input', () => {
+  clearTimeout(deb);
+  deb = setTimeout(() => { store.set('draft', $('#input').value); render(); }, 120);
+});
+$('#btnSample').onclick = () => { $('#input').value = SAMPLE; store.set('draft', SAMPLE); render(); };
+$('#btnClear').onclick = () => { $('#input').value = ''; store.set('draft', ''); render(); $('#input').focus(); };
+$('#btnPaste').onclick = async () => {
+  try{ const t = await navigator.clipboard.readText(); $('#input').value = t; store.set('draft', t); render(); }
+  catch(e){ toast('브라우저가 붙여넣기를 막았어요 - 직접 붙여넣어 주세요'); $('#input').focus(); }
+};
+$('#btnCopyAll').onclick = async () => {
+  const t = $('#output').value;
+  if (!t) return toast('복사할 내용이 없어요');
+  toast(await copyText(t) ? '전체 복사됨 (' + fmt(t.length) + '자)' : '복사 실패 - 직접 선택해서 복사해 주세요');
+};
+$('#tabBasic').onclick = () => setMode('basic');
+$('#tabDiscord').onclick = () => setMode('discord');
+$('#limit').value = state.limit;
+$('#limit').addEventListener('input', () => {
+  const v = parseInt($('#limit').value, 10);
+  if (v >= 50){ state.limit = v; store.set('limit', v); render(); }
+});
+document.querySelectorAll('[data-limit]').forEach(b => b.onclick = () => {
+  state.limit = +b.dataset.limit; $('#limit').value = state.limit; store.set('limit', state.limit); render();
+});
+$('#numbering').checked = state.numbering;
+$('#numbering').onchange = () => { state.numbering = $('#numbering').checked; store.set('numbering', state.numbering); render(); };
+$('#btnResetCopied').onclick = () => { copied = new Set(); render(); };
+$('#tableStyle').value = state.tableStyle;
+$('#tableStyle').onchange = () => { state.tableStyle = $('#tableStyle').value; store.set('tableStyle', state.tableStyle); render(); };
+$('#headingStyle').value = state.headingStyle;
+$('#headingStyle').onchange = () => { state.headingStyle = $('#headingStyle').value; store.set('headingStyle', state.headingStyle); render(); };
+$('#customOrder').value = state.customOrder;
+$('#customOrder').onchange = () => { state.customOrder = $('#customOrder').value; store.set('customOrder', state.customOrder); render(); };
+$('#btnAddRule').onclick = () => { state.custom.push({on:true, find:'', rep:'', regex:false}); buildCustom(); store.set('custom', state.custom); };
+
+buildBuiltin();
+buildCustom();
+$('#input').value = store.get('draft', '');
+setMode(state.mode);
+render();
+})();
+</script>
+</body>
+</html>
